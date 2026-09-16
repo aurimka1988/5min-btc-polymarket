@@ -1,0 +1,51 @@
+version: 2
+name: btc_5m_impulse_momentum_profiles
+market: polymarket_btc_updown_5m
+
+# Every confirmation must pass. Paper mode is the default.
+strategy_reference:
+  style: momentum_follow_through_into_close
+  btc_move_usd_min: 70
+  btc_move_usd_reference: 100
+  btc_lookback_sec: 120
+
+shared_rules:
+  execution_safety:
+    paper_by_default: true
+    live_requires_explicit_flag: "--execute"
+    skip_if_quote_stale_sec_gt: 8
+    skip_if_dns_or_api_errors_consecutive: 3
+    skip_if_spread_gt: 0.03
+    skip_if_top_ask_notional_usd_lt: 30
+  confirmations:
+    require_market_skew_same_direction: true
+    min_market_skew: 0.10
+    require_orderbook_imbalance: true
+    min_bid_to_ask_notional_ratio: 1.0
+  session_timing:
+    min_entry_seconds_left: 60
+    poll_sec: 5
+  reporting:
+    state_file: var/btc5m_v2_state.json
+    report_file: var/btc5m_v2_reports.jsonl
+
+profiles:
+  conservative:
+    signal: { threshold_price: 0.70 }
+    sizing:
+      stake_usd: 5
+      max_notional_usd: 5
+      daily_max_loss_usd: 10
+      max_trades_per_day: 12
+  aggressive:
+    signal: { threshold_price: 0.70 }
+    sizing:
+      stake_usd: 5
+      max_notional_usd: 5
+      daily_max_loss_usd: 15
+      max_trades_per_day: 20
+
+runner_mapping:
+  script: scripts/test_btc_5m_session_exit_sl_v2.py
+  paper_example: ".venv/bin/python scripts/test_btc_5m_session_exit_sl_v2.py --profile conservative"
+  external_dependency: "src/live/pm_live_trade_runner.py in --repo/BTC5M_REPO is required only for --execute"
